@@ -2,7 +2,7 @@
 
 AVX2 big-integer multiplication via three-prime NTT with mixed-radix support.
 
-**2.0 -- 2.6x faster than GMP** at large sizes (>100K limbs).
+**2.0 -- 2.6x faster than GMP** at large sizes (>100K limbs). (Not a FAIR comparison! I compared gmpy to my bench implemented with C++. There's certainly wrapping cost, also GMP does allocation stuff)
 
 ![Benchmark](bench_all.png)
 
@@ -20,7 +20,7 @@ The convolution is evaluated modulo three NTT-friendly primes independently, the
 | P1 | 754974721 | 90 * 2^23 + 1 |
 | P2 | 377487361 | 45 * 2^23 + 1 |
 
-The product P0 * P1 * P2 ~ 2^88, sufficient for convolution coefficients up to 2^68.
+The product P0 * P1 * P2 ~ 2^88, sufficient for convolution coefficients up to 2^88.
 
 ### Mixed-Radix NTT
 
@@ -100,3 +100,10 @@ ntt::big_multiply(out, out_len, a, na, b, nb);
 ./test_correctness   # schoolbook check (n < 1000) + modular verification (n up to 100K)
 ./bench_sizes        # performance across sizes 1K -- 3M limbs
 ```
+
+## Acknowledgements
+
+- [Yuezheng_Ling_fans' NTT submission](https://judge.yosupo.jp/submission/201990) -- the reference implementation this project is based on
+- [Codeforces: NTT implementation guide](https://codeforces.com/blog/entry/142063)
+- [y-cruncher](http://www.numberworld.org/y-cruncher/) -- inspiration for small primes NTT multiplication
+- Brian Gough, *FFT Algorithms* (1997) -- mixed-radix FFT theory and sub-transform modules
