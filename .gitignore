@@ -1,0 +1,49 @@
+# Claude Code
+.claude/
+
+# Windows artifacts
+nul
+
+# Build artifacts
+build/
+*.exe
+*.obj
+*.iobj
+*.pdb
+*.ilk
+
+# IDE
+.vs/
+.vscode/
+*.vcxproj.user
+
+# Python
+__pycache__/
+*.pyc
+
+# Dev-only files
+*.bat
+*.ps1
+*.csv
+*.pdf
+page*.png
+bench_plot.png
+bench_compare.png
+bench_comparison.png
+
+# Scratch / debug
+debug_test.cpp
+test_radix3.cpp
+test_perf.cpp
+ref.cpp
+ref_perf.cpp
+bench_breakdown.cpp
+dump.bat
+ntt_arch_v3.md
+check_gmpy2.py
+plot_bench.py
+plot_compare.py
+plot_comparison.py
+plot_all.py
+bench_compare.py
+test_output.txt
