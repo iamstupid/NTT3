@@ -24,7 +24,7 @@ The product P0 * P1 * P2 ~ 2^88, sufficient for convolution coefficients up to 2
 
 ### Mixed-Radix NTT
 
-Transform sizes are {1, 3, 5} * 2^k, reducing worst-case padding from 2x (power-of-2 only) to ~1.25x. All three primes have 3 | p-1 and 5 | p-1, enabling exact radix-3 and radix-5 butterflies.
+Transform sizes are {1, 3, 5} * 2^k, reducing worst-case padding from 2x (power-of-2 only) to ~1.33x(3 vs 4). All three primes have 3 | p-1 and 5 | p-1, enabling exact radix-3 and radix-5 butterflies.
 
 For a size n = m * 2^k (m in {1, 3, 5}):
 - **Forward (DIF):** outer radix-m decimation-in-frequency pass, then m independent radix-4/2 NTTs of size 2^k
@@ -33,7 +33,7 @@ For a size n = m * 2^k (m in {1, 3, 5}):
 
 ### Base-2 Engine
 
-The power-of-2 core uses a cache-oblivious blocked traversal with ruler-sequence root updates (no root table lookups). All arithmetic stays in Montgomery form with lazy reductions ([0, 4M) intermediate range) to minimize modular operations.
+The power-of-2 core uses a cache-friendly blocked traversal with ruler-sequence root updates (no root table lookups). All arithmetic stays in Montgomery form with lazy reductions ([0, 4M) intermediate range) to minimize modular operations.
 
 Frequency-domain multiplication uses twisted convolution: the negacyclic polynomial product mod (x^8 - w) is computed via 8-point cyclic convolution within each AVX2 vector, avoiding a factor-of-2 zero-padding overhead.
 
