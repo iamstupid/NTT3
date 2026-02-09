@@ -1,6 +1,6 @@
 #pragma once
 #include "../common.hpp"
-#include "../mont/mont_vec.hpp"
+#include "mont_vec.hpp"
 
 namespace ntt {
 

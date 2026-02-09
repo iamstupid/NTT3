@@ -1,6 +1,6 @@
 #pragma once
 #include "../common.hpp"
-#include "../mont/mont_scalar.hpp"
+#include "mont_scalar.hpp"
 #include <array>
 
 namespace ntt {
@@ -56,6 +56,12 @@ struct RootPlan {
     u32 tw5_root[MAX_LG + 1];
     u32 tw5i_root[MAX_LG + 1];
 
+    // Power-of-2 roots in Montgomery form:
+    // pow2_root[t]  = omega_{2^t}, pow2i_root[t] = omega_{2^t}^{-1}
+    // Valid for t >= 2.
+    u32 pow2_root[MAX_LG + 1];
+    u32 pow2i_root[MAX_LG + 1];
+
     constexpr RootPlan() :
         img(0), imgniv(0),
         RT1{}, RT3{}, rt3{}, rt3i{}, bwb{}, bwbi{},
@@ -63,7 +69,8 @@ struct RootPlan {
         rt4nr{}, rt4nr2{}, rt4nri{}, rt4nr2i{},
         neg_half(0), j3_half(0), inv3(0), inv5(0),
         c1h(0), c2h(0), j1h(0), j2h(0),
-        tw3_root{}, tw3i_root{}, tw5_root{}, tw5i_root{}
+        tw3_root{}, tw3i_root{}, tw5_root{}, tw5i_root{},
+        pow2_root{}, pow2i_root{}
     {
         const int k = ctz_constexpr(Mod - 1);
 
@@ -109,6 +116,12 @@ struct RootPlan {
         for (int i = k - 2; i > 0; --i) {
             rt1[i - 1] = ms.mul(rt1[i], rt1[i]);
             rt1i[i - 1] = ms.mul(rt1i[i], rt1i[i]);
+        }
+
+        // Expose omega_{2^t} chains for runtime Bailey twiddle construction.
+        for (int t = 2; t <= k; ++t) {
+            pow2_root[t] = rt1[t - 2];
+            pow2i_root[t] = rt1i[t - 2];
         }
 
         // img = omega_4

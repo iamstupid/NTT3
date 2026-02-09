@@ -1,15 +1,17 @@
 #pragma once
 #include "common.hpp"
 #include "simd/avx2.hpp"
-#include "mont/mont_scalar.hpp"
-#include "mont/mont_vec.hpp"
-#include "roots/root_plan.hpp"
-#include "kernels/radix4.hpp"
-#include "kernels/radix2.hpp"
-#include "kernels/cyclic_conv.hpp"
-#include "engine/scheduler.hpp"
-#include "multi/crt.hpp"
+#include "p30x3/mont_scalar.hpp"
+#include "p30x3/mont_vec.hpp"
+#include "p30x3/root_plan.hpp"
+#include "p30x3/radix4.hpp"
+#include "p30x3/radix2.hpp"
+#include "p30x3/cyclic_conv.hpp"
+#include "p30x3/scheduler.hpp"
+#include "p30x3/crt.hpp"
 #include "arena.hpp"
+#include "profile.hpp"
+#include "p50x4/multiply.hpp"
 #include <algorithm>
 #include <cstring>
 
@@ -86,13 +88,24 @@ inline void ntt_conv_one_prime(
     using Vec = typename B::Vec;
     using S = NTTScheduler<B, Mod>;
 
-    reduce_and_pad<B, Mod>(f, a, na, N);
-    reduce_and_pad<B, Mod>(g, b, nb, N);
-
-    S::forward((Vec*)f, ntt_vecs);
-    S::forward((Vec*)g, ntt_vecs);
-    S::freq_multiply((Vec*)f, (Vec*)g, ntt_vecs);
-    S::inverse((Vec*)f, ntt_vecs);
+    {
+        ProfileScope ps(&profile_counters().api_reduce_pad_ns);
+        reduce_and_pad<B, Mod>(f, a, na, N);
+        reduce_and_pad<B, Mod>(g, b, nb, N);
+    }
+    {
+        ProfileScope ps(&profile_counters().api_forward_ns);
+        S::forward((Vec*)f, ntt_vecs);
+        S::forward((Vec*)g, ntt_vecs);
+    }
+    {
+        ProfileScope ps(&profile_counters().api_freqmul_ns);
+        S::freq_multiply((Vec*)f, (Vec*)g, ntt_vecs);
+    }
+    {
+        ProfileScope ps(&profile_counters().api_inverse_ns);
+        S::inverse((Vec*)f, ntt_vecs);
+    }
 }
 
 // Three-prime NTT-based big integer multiplication.
@@ -103,6 +116,8 @@ inline void big_multiply(
     const u32* a, idt na,
     const u32* b, idt nb)
 {
+    ProfileScope ps_total(&profile_counters().api_total_ns);
+
     using B = Avx2;
     using Vec = typename B::Vec;
 
@@ -131,13 +146,31 @@ inline void big_multiply(
     ntt_conv_one_prime<B, CRT_P2>((u32*)rf2, (u32*)rg, ntt_vecs, a, na, b, nb, N);
 
     idt result_len = (std::min)(min_len, out_len);
-    crt_and_propagate(out, result_len, (u32*)rf0, (u32*)rf1, (u32*)rf2);
+    {
+        ProfileScope ps(&profile_counters().api_crt_ns);
+        crt_and_propagate(out, result_len, (u32*)rf0, (u32*)rf1, (u32*)rf2);
+    }
 
     // Return tagged pointers to arena (tag tells it the actual bin)
     arena.dealloc(g,  ntt_vecs);
     arena.dealloc(f2, ntt_vecs);
     arena.dealloc(f1, ntt_vecs);
     arena.dealloc(f0, ntt_vecs);
+}
+
+// Four-prime NTT-based big integer multiplication (u64 limbs, base 2^64).
+// Input: a[0..na), b[0..nb) are arrays of u64 limbs (little-endian).
+// Output: out[0..out_len) is the product (at least na+nb limbs needed).
+// Uses 80-bit coefficient packing + 4 x 50-bit FMA primes + SIMD Garner CRT.
+inline void big_multiply_u64(
+    u64* out, idt out_len,
+    const u64* a, idt na,
+    const u64* b, idt nb)
+{
+    p50x4::Ntt4& engine = p50x4::Ntt4::instance();
+    engine.multiply(out, static_cast<std::size_t>(out_len),
+                    a, static_cast<std::size_t>(na),
+                    b, static_cast<std::size_t>(nb));
 }
 
 } // namespace ntt

@@ -1,7 +1,7 @@
 #pragma once
 #include "../common.hpp"
-#include "../mont/mont_vec.hpp"
-#include "../roots/root_plan.hpp"
+#include "mont_vec.hpp"
+#include "root_plan.hpp"
 
 namespace ntt {
 

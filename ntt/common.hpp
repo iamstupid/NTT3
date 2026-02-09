@@ -1,4 +1,5 @@
 #pragma once
+#include <cassert>
 #include <cstdint>
 #include <cstddef>
 #include <cstring>
@@ -66,6 +67,83 @@ constexpr int lg_constexpr(unsigned x) {
   inline int ntt_clz(unsigned x)             { return __builtin_clz(x); }
   inline int ntt_lg(unsigned x)              { return 31 - __builtin_clz(x); }
 #endif
+
+// 64-bit log2 (floor), undefined for x == 0
+#if defined(_MSC_VER)
+  inline int ntt_lgll(unsigned long long x)  { unsigned long r; _BitScanReverse64(&r, x); return (int)r; }
+#else
+  inline int ntt_lgll(unsigned long long x)  { return 63 - __builtin_clzll(x); }
+#endif
+
+// Number of bits needed to represent x (x > 0)
+inline int nbits_nz(idt x) {
+    assert(x != 0);
+    return ntt_lgll(static_cast<unsigned long long>(x)) + 1;
+}
+
+// 2^k as size_t
+inline idt pow2(int k) { return idt{1} << k; }
+
+// Ceiling division
+inline idt cdiv(idt a, idt b) { return (a + b - 1) / b; }
+
+// log2 for exact powers of 2
+inline int log2_exact(idt n) {
+    return ntt_ctzll(static_cast<unsigned long long>(n));
+}
+
+// ── Integer modular arithmetic (setup-only, not hot-path) ──
+inline u64 mul_mod_u64(u64 a, u64 b, u64 m) {
+#if defined(_MSC_VER) && !defined(__clang__)
+    u64 hi = 0; u64 lo = _umul128(a, b, &hi);
+    u64 rem = 0; (void)_udiv128(hi, lo, m, &rem); return rem;
+#else
+    return static_cast<u64>((static_cast<unsigned __int128>(a) * b) % m);
+#endif
+}
+
+inline u64 mod_u128(u64 hi, u64 lo, u64 m) {
+#if defined(_MSC_VER) && !defined(__clang__)
+    u64 rem = 0; (void)_udiv128(hi, lo, m, &rem); return rem;
+#else
+    return static_cast<u64>(((static_cast<unsigned __int128>(hi) << 64) | lo) % m);
+#endif
+}
+
+inline u64 pow_mod(u64 a, u64 e, u64 m) {
+    u64 r = 1 % m; a %= m;
+    while (e > 0) {
+        if (e & 1) r = mul_mod_u64(r, a, m);
+        a = mul_mod_u64(a, a, m); e >>= 1;
+    }
+    return r;
+}
+
+inline u64 inv_mod(u64 a, u64 p) { return pow_mod(a, p - 2, p); }
+inline u64 sub_mod_u64(u64 a, u64 b, u64 m) { return (a >= b) ? (a - b) : (a + m - b); }
+inline u64 add_mod_u64(u64 a, u64 b, u64 m) { u64 s = a + b; return (s >= m) ? (s - m) : s; }
+
+inline u64 primitive_root(u64 p) {
+    u64 n = p - 1;
+    u64 fs[64]; int nf = 0;
+    if ((n & 1) == 0) { fs[nf++] = 2; while ((n & 1) == 0) n >>= 1; }
+    for (u64 d = 3; d * d <= n; d += 2)
+        if (n % d == 0) { fs[nf++] = d; while (n % d == 0) n /= d; }
+    if (n > 1) fs[nf++] = n;
+    for (u64 g = 2; g < p; ++g) {
+        bool ok = true;
+        for (int i = 0; i < nf; ++i)
+            if (pow_mod(g, (p - 1) / fs[i], p) == 1) { ok = false; break; }
+        if (ok) return g;
+    }
+    return 0;
+}
+
+inline u64 n_revbin(u64 x, int bits) {
+    u64 r = 0;
+    for (int i = 0; i < bits; ++i) { r = (r << 1) | (x & 1); x >>= 1; }
+    return r;
+}
 
 // ── Aligned allocation ──
 #if defined(_MSC_VER)

@@ -61,6 +61,11 @@ bench_sizes.cpp           -- multi-size benchmark
 CMakeLists.txt
 ```
 
+## Detailed Documentation
+
+- Chinese deep-dive (algorithms + formulas + optimizations): docs/algorithm_and_optimizations_zh.md
+- Bailey 4-step compatibility design (with twisted conv): docs/bailey_4step_twisted_conv_compat_zh.md
+
 ## Build
 
 Requires C++17 and AVX2 support.

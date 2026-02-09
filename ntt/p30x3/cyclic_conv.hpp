@@ -1,7 +1,7 @@
 #pragma once
 #include "../common.hpp"
-#include "../mont/mont_scalar.hpp"
-#include "../mont/mont_vec.hpp"
+#include "mont_scalar.hpp"
+#include "mont_vec.hpp"
 #include "../simd/avx2.hpp"
 #include <array>
 

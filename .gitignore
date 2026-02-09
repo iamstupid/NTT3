@@ -1,10 +1,25 @@
 # Build artifacts
-build/
+/build/
+/build-*/
+/cmake-build-*/
 *.exe
 *.obj
 *.iobj
 *.pdb
 *.ilk
+
+# CMake generated files
+/CMakeFiles/
+/CMakeCache.txt
+/cmake_install.cmake
+/compile_commands.json
+/Makefile
+/Testing/
+/CTestTestfile.cmake
+/build.ninja
+/.ninja_deps
+/.ninja_log
+/install_manifest.txt
 
 # IDE / tools
 .vs/
@@ -18,6 +33,17 @@ nul
 # Archived dev files
 archived/
 
+# Experimental (sd_ntt development)
+experimental/
+
+# Local cache
+/.cache/
+
 # Python
 __pycache__/
 *.pyc
+
+# Benchmark outputs
+/bench_sizes_*.csv
+/bench_all.png
+/benchmarks/

@@ -1,12 +1,12 @@
 #pragma once
 #include "../common.hpp"
-#include "../mont/mont_vec.hpp"
-#include "../roots/root_plan.hpp"
-#include "../kernels/radix4.hpp"
-#include "../kernels/radix2.hpp"
-#include "../kernels/radix3.hpp"
-#include "../kernels/radix5.hpp"
-#include "../kernels/cyclic_conv.hpp"
+#include "mont_vec.hpp"
+#include "root_plan.hpp"
+#include "radix4.hpp"
+#include "radix2.hpp"
+#include "radix3.hpp"
+#include "radix5.hpp"
+#include "cyclic_conv.hpp"
 #include <array>
 #include <algorithm>
 
