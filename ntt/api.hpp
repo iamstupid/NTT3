@@ -158,19 +158,30 @@ inline void big_multiply(
     arena.dealloc(f0, ntt_vecs);
 }
 
-// Four-prime NTT-based big integer multiplication (u64 limbs, base 2^64).
+// Max p30x3 NTT size in u32 elements: 3*2^22 = 12582912
+static constexpr idt P30X3_MAX_NTT = 12582912;
+
+// Big integer multiplication (u64 limbs, base 2^64).
 // Input: a[0..na), b[0..nb) are arrays of u64 limbs (little-endian).
 // Output: out[0..out_len) is the product (at least na+nb limbs needed).
-// Uses 80-bit coefficient packing + 4 x 50-bit FMA primes + SIMD Garner CRT.
+// Dispatches to p30x3 (faster, 3-prime u32) when NTT size fits, else p50x4.
 inline void big_multiply_u64(
     u64* out, idt out_len,
     const u64* a, idt na,
     const u64* b, idt nb)
 {
-    p50x4::Ntt4& engine = p50x4::Ntt4::instance();
-    engine.multiply(out, static_cast<std::size_t>(out_len),
-                    a, static_cast<std::size_t>(na),
-                    b, static_cast<std::size_t>(nb));
+    // u64 little-endian in memory is already a u32 stream — just cast.
+    idt na32 = 2 * na, nb32 = 2 * nb, out32 = 2 * out_len;
+    idt ntt_size = ceil_smooth(na32 + nb32 > 64 ? na32 + nb32 : 64);
+
+    if (ntt_size <= P30X3_MAX_NTT) {
+        big_multiply((u32*)out, out32, (const u32*)a, na32, (const u32*)b, nb32);
+    } else {
+        p50x4::Ntt4& engine = p50x4::Ntt4::instance();
+        engine.multiply(out, static_cast<std::size_t>(out_len),
+                        a, static_cast<std::size_t>(na),
+                        b, static_cast<std::size_t>(nb));
+    }
 }
 
 } // namespace ntt
