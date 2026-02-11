@@ -308,19 +308,24 @@ inline void radix5_dit_pass(const FftCtx& Q, double* f, std::size_t N) {
 // Mixed-radix FFT dispatch
 // ================================================================
 
-// Find smallest NTT-friendly size >= x from {2^k, 3*2^k, 5*2^k}
+// Find smallest NTT-friendly size >= x from {2^k, 3*2^k, 5*2^k}.
+// For mixed-radix sizes, require the 2^k factor >= BLK_SZ so sub-FFTs are >= 256.
 inline std::size_t ceil_ntt_size(std::size_t x) {
     if (x <= 1) return 1;
     std::size_t p2 = ceil_pow2(x);
     std::size_t best = p2;
     {
         std::size_t base = (x + 2) / 3;
-        std::size_t s = 3 * ceil_pow2(base);
+        std::size_t sub = ceil_pow2(base);
+        if (sub < BLK_SZ) sub = BLK_SZ;
+        std::size_t s = 3 * sub;
         if (s >= x && s < best) best = s;
     }
     {
         std::size_t base = (x + 4) / 5;
-        std::size_t s = 5 * ceil_pow2(base);
+        std::size_t sub = ceil_pow2(base);
+        if (sub < BLK_SZ) sub = BLK_SZ;
+        std::size_t s = 5 * sub;
         if (s >= x && s < best) best = s;
     }
     return best;

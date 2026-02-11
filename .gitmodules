@@ -1,0 +1,3 @@
+[submodule "zint"]
+	path = zint
+	url = C:/Users/zball/Documents/bigint/zint.git
