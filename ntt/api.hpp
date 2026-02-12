@@ -88,17 +88,19 @@ inline void ntt_conv_one_prime(
     using Vec = typename B::Vec;
     using S = NTTScheduler<B, Mod>;
 
+    bool is_sqr = (a == b && na == nb);
     {
         ProfileScope ps(&profile_counters().api_reduce_pad_ns);
         reduce_and_pad<B, Mod>(f, a, na, N);
-        reduce_and_pad<B, Mod>(g, b, nb, N);
+        if (!is_sqr) reduce_and_pad<B, Mod>(g, b, nb, N);
     }
     {
         ProfileScope ps(&profile_counters().api_forward_ns);
         S::forward((Vec*)f, ntt_vecs);
-        S::forward((Vec*)g, ntt_vecs);
+        if (!is_sqr) S::forward((Vec*)g, ntt_vecs);
     }
     {
+        if (is_sqr) std::memcpy(g, f, N * sizeof(u32));
         ProfileScope ps(&profile_counters().api_freqmul_ns);
         S::freq_multiply((Vec*)f, (Vec*)g, ntt_vecs);
     }

@@ -43,7 +43,20 @@ experimental/
 __pycache__/
 *.pyc
 
-# Benchmark outputs
+# Benchmark outputs (raw data, old benchmarks dir)
 /bench_sizes_*.csv
 /bench_all.png
 /benchmarks/
+*.csv
+
+# Misc untracked source files at root
+/bench_basecase.asm
+/bench_compare.cpp
+/bench_zint_vs_bi.cpp
+/build_compare.ps1
+/build_test.ps1
+/build_test_bigint.ps1
+/test_p50_baseline_only.cpp
+/test_zint_vs_bi.cpp
+/external/
+/externalmini-gmp/

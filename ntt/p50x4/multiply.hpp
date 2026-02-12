@@ -192,8 +192,9 @@ public:
             return;
         }
 
+        bool is_sqr = (a == b && na == nb);
         std::size_t nca = n_coeffs_80(na);
-        std::size_t ncb = n_coeffs_80(nb);
+        std::size_t ncb = is_sqr ? nca : n_coeffs_80(nb);
         std::size_t conv_len = nca + ncb - 1;
         std::size_t N = ceil_ntt_size(conv_len);
         if (N < BLK_SZ) N = BLK_SZ;
@@ -204,23 +205,27 @@ public:
 
         convert_80bit_all_primes(fa, a, na, ctx_);
 
-        // Single shared fb buffer, reused per prime
-        double* fb = alloc_doubles(N);
-        std::size_t nb_coeffs = n_coeffs_80(nb);
+        double* fb = is_sqr ? nullptr : alloc_doubles(N);
 
         for (int pi = 0; pi < 4; ++pi) {
             auto& Q = ctx_[pi];
 
-            convert_80bit_to_double(fb, b, nb, Q);
-            std::memset(fb + nb_coeffs, 0, (N - nb_coeffs) * sizeof(double));
+            if (!is_sqr) {
+                convert_80bit_to_double(fb, b, nb, Q);
+                std::memset(fb + ncb, 0, (N - ncb) * sizeof(double));
+            }
             fft_mixed(Q, fa[pi], N);
-            fft_mixed(Q, fb, N);
-            point_mul(Q, fa[pi], fb, N);
+            if (is_sqr) {
+                point_sqr(Q, fa[pi], N);
+            } else {
+                fft_mixed(Q, fb, N);
+                point_mul(Q, fa[pi], fb, N);
+            }
             ifft_mixed(Q, fa[pi], N);
 
             scale_mixed(Q, fa[pi], conv_len, N);
         }
-        free_doubles(fb);
+        if (fb) free_doubles(fb);
 
         // CRT reconstruct
         std::size_t zn = (80 * conv_len + 256 + 63) / 64;

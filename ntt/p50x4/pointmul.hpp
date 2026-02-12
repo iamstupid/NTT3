@@ -23,6 +23,20 @@ inline void point_mul(const FftCtx& Q, double* a, const double* b,
     }
 }
 
+// Pointwise square in frequency domain (squaring: a*a)
+inline void point_sqr(const FftCtx& Q, double* a, std::size_t len) {
+    V4 n = v4_set1(Q.p), ninv = v4_set1(Q.pinv);
+    std::size_t i = 0;
+    for (; i + 4 <= len; i += 4) {
+        V4 va = v4_reduce_pm1n(v4_load(a + i), n, ninv);
+        v4_store(a + i, v4_mulmod(va, va, n, ninv));
+    }
+    for (; i < len; ++i) {
+        double v = s_reduce_pm1n(a[i], Q.p, Q.pinv);
+        a[i] = s_mulmod(v, v, Q.p, Q.pinv);
+    }
+}
+
 // Scale by 1/N (for inverse FFT normalization)
 inline void scale(const FftCtx& Q, double* d, std::size_t len, double inv_n) {
     V4 n = v4_set1(Q.p), ninv = v4_set1(Q.pinv);
